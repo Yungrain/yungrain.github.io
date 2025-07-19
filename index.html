@@ -67,6 +67,19 @@
       font-size: 0.9em;
       color: #ccc;
     }
+    .back-button {
+      background: #444;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    .back-button:hover {
+      background: #555;
+    }
 
     /* Timeline Section */
     .timeline {
@@ -138,6 +151,11 @@
       scroll-snap-type: x mandatory;
       padding: 20px;
       gap: 10px;
+      transition: opacity 0.3s ease; /* Smooth fade effect */
+    }
+    .carousel.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
     .carousel::-webkit-scrollbar {
       display: none;
@@ -204,10 +222,11 @@
           <button id="play-pause">&#9658;</button>
           <button id="next">&#9654;</button>
         </div>
+        <button class="back-button" id="back-to-carousel">Back to Carousel</button>
       </div>
 
       <!-- Carousel Section -->
-      <div class="carousel">
+      <div class="carousel" id="carousel">
         <div class="album" 
           data-song="gnarly.mp3" 
           data-title="Gnarly" 
@@ -253,6 +272,8 @@
     const trackTimeline = document.getElementById("track-timeline");
     const albums = document.querySelectorAll(".album");
     const albumDisplay = document.getElementById("album-display");
+    const carousel = document.getElementById("carousel");
+    const backButton = document.getElementById("back-to-carousel");
 
     let currentSongIndex = 0;
     let isPlaying = false;
@@ -312,8 +333,14 @@
         currentSongIndex = index;
         updatePlayer(album);
         albumDisplay.style.display = "flex"; // Show album cover section
+        carousel.classList.add("hidden"); // Hide carousel
         playSong(album.getAttribute("data-song"));
       });
+    });
+
+    backButton.addEventListener("click", () => {
+      albumDisplay.style.display = "none"; // Hide album cover section
+      carousel.classList.remove("hidden"); // Show carousel
     });
 
     function updatePlayer(album) {
