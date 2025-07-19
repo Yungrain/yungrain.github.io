@@ -43,44 +43,77 @@
       flex-direction: column;
     }
 
-    /* Player Section */
-    .player {
-      display: flex;
+    /* Album Cover Section */
+    .album-cover {
+      display: none; /* Hidden initially */
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      background: #f8f8f8;
-      padding: 15px;
+      background: #111;
+      padding: 20px;
+      gap: 10px;
+      text-align: center;
     }
-    .player img {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+    .album-cover img {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 20px;
     }
-    .info {
-      flex: 1;
-      margin-left: 10px;
-      text-align: left;
+    .album-cover h2 {
+      margin: 10px 0 5px;
+      font-size: 1.2em;
     }
-    .info h2 {
-      margin: 0;
-      font-size: 1em;
-      color: #000;
-    }
-    .info p {
+    .album-cover p {
       margin: 0;
       font-size: 0.9em;
-      color: #777;
+      color: #ccc;
     }
 
-    /* Play and Next Buttons Styling */
+    /* Timeline Section */
+    .timeline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      margin: 10px 0;
+    }
+    .timeline input[type="range"] {
+      flex-grow: 1;
+      appearance: none;
+      width: 100%;
+      height: 5px;
+      background: #444;
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+    .timeline input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .timeline .time {
+      font-size: 0.8em;
+      color: white;
+    }
+
+    /* Controls Section */
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+    }
     .controls button {
-      background: #000; /* Black background */
-      color: #fff; /* White text */
-      font-size: 1.5em; /* Large font size */
-      border: 2px solid #fff; /* White border */
-      border-radius: 50%; /* Circular button */
-      width: 50px;
-      height: 50px;
+      background: #000;
+      color: #fff;
+      font-size: 1.5em;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -88,7 +121,14 @@
       transition: all 0.3s ease;
     }
     .controls button:hover {
-      background: #444; /* Dark grey hover effect */
+      background: #444;
+    }
+    .controls button#play-pause span {
+      display: inline-block;
+      width: 10px;
+      height: 20px;
+      background: white;
+      margin: 0 2px;
     }
 
     /* Carousel Section */
@@ -100,7 +140,7 @@
       gap: 10px;
     }
     .carousel::-webkit-scrollbar {
-      display: none; /* Hide scrollbar */
+      display: none;
     }
     .album {
       flex: 0 0 auto;
@@ -150,16 +190,19 @@
 <body>
   <div class="phone-frame">
     <div class="app">
-      <!-- Player Section -->
-      <div class="player">
-        <img id="album-icon" src="album-icon.png" alt="Album Icon">
-        <div class="info">
-          <h2 id="song-title">Gnarly</h2>
-          <p id="artist-name">Yung Rain</p>
+      <!-- Album Cover -->
+      <div class="album-cover" id="album-display">
+        <img id="album-icon" src="album-icon.png" alt="Album Cover">
+        <h2 id="song-title">Gnarly</h2>
+        <p id="artist-name">Yung Rain</p>
+        <div class="timeline">
+          <span class="time" id="current-time">0:00</span>
+          <input type="range" id="track-timeline" value="0" min="0" max="100">
+          <span class="time" id="total-time">0:00</span>
         </div>
         <div class="controls">
-          <button id="play-pause">&#9658;</button> <!-- Play Button -->
-          <button id="next">&#9654;</button> <!-- Next Button -->
+          <button id="play-pause">&#9658;</button>
+          <button id="next">&#9654;</button>
         </div>
       </div>
 
@@ -205,22 +248,44 @@
     const albumIcon = document.getElementById("album-icon");
     const songTitle = document.getElementById("song-title");
     const artistName = document.getElementById("artist-name");
+    const currentTime = document.getElementById("current-time");
+    const totalTime = document.getElementById("total-time");
+    const trackTimeline = document.getElementById("track-timeline");
     const albums = document.querySelectorAll(".album");
+    const albumDisplay = document.getElementById("album-display");
 
     let currentSongIndex = 0;
     let isPlaying = false;
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return `${minutes}:${secs}`;
+    }
+
+    function updateTimeline() {
+      const duration = audioPlayer.duration || 0;
+      const current = audioPlayer.currentTime || 0;
+      trackTimeline.max = duration;
+      trackTimeline.value = current;
+      currentTime.textContent = formatTime(current);
+      totalTime.textContent = formatTime(duration);
+    }
 
     function playSong(src) {
       audioPlayer.src = src;
       audioPlayer.play();
       isPlaying = true;
-      playPauseButton.innerHTML = "&#10074;&#10074;"; // Pause symbol
+      playPauseButton.innerHTML = `
+        <span></span>
+        <span></span>
+      `;
     }
 
     function pauseSong() {
       audioPlayer.pause();
       isPlaying = false;
-      playPauseButton.innerHTML = "&#9658;"; // Play symbol
+      playPauseButton.innerHTML = "&#9658;";
     }
 
     function togglePlayPause() {
@@ -246,6 +311,7 @@
       album.addEventListener("click", () => {
         currentSongIndex = index;
         updatePlayer(album);
+        albumDisplay.style.display = "flex"; // Show album cover section
         playSong(album.getAttribute("data-song"));
       });
     });
@@ -260,22 +326,19 @@
       albumIcon.src = icon;
     }
 
-    // Audio player event listeners
-    audioPlayer.addEventListener("ended", () => {
-      // Auto-play next song when current song ends
-      nextButton.click();
+    trackTimeline.addEventListener("input", (e) => {
+      audioPlayer.currentTime = e.target.value;
     });
 
-    audioPlayer.addEventListener("pause", () => {
-      if (isPlaying) {
-        isPlaying = false;
-        playPauseButton.innerHTML = "&#9658;"; // Play symbol
-      }
-    });
+    // Update timeline as song plays
+    audioPlayer.addEventListener("timeupdate", updateTimeline);
 
     audioPlayer.addEventListener("play", () => {
       isPlaying = true;
-      playPauseButton.innerHTML = "&#10074;&#10074;"; // Pause symbol
+    });
+
+    audioPlayer.addEventListener("pause", () => {
+      isPlaying = false;
     });
 
     document.addEventListener("DOMContentLoaded", () => {
