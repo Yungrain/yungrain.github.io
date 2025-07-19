@@ -317,6 +317,9 @@
     let currentSongIndex = 0;
     let isPlaying = false;
     let currentStreamCount = 0;
+    let listeningTime = 0;
+    let streamCounted = false;
+    let updateInterval;
 
     function formatTime(seconds) {
       const minutes = Math.floor(seconds / 60);
@@ -365,6 +368,46 @@
       streamCounter.style.display = 'none';
     }
 
+    function startStreamTracking() {
+      // Reset tracking for new song
+      listeningTime = 0;
+      streamCounted = false;
+      
+      // Clear any existing interval
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+      
+      // Start tracking every second
+      updateInterval = setInterval(() => {
+        if (isPlaying && !streamCounted) {
+          listeningTime++;
+          
+          const songDuration = audioPlayer.duration || 0;
+          const hasReached30Seconds = listeningTime >= 30;
+          const isShortSongCompleted = songDuration > 0 && songDuration <= 30 && audioPlayer.ended;
+          
+          // Count stream if 30 seconds reached OR if short song completed
+          if (hasReached30Seconds || isShortSongCompleted) {
+            const currentAlbum = albums[currentSongIndex];
+            const title = currentAlbum.getAttribute("data-title");
+            const artist = currentAlbum.getAttribute("data-artist");
+            const songId = currentAlbum.getAttribute("data-song");
+            
+            trackStream(songId, title, artist);
+            streamCounted = true; // Prevent counting multiple times
+          }
+        }
+      }, 1000); // Update every second
+    }
+
+    function stopStreamTracking() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+    }
+
     function playSong(src) {
       audioPlayer.src = src;
       audioPlayer.play();
@@ -374,14 +417,8 @@
         <span></span>
       `;
       
-      // Track stream and show counter
-      const currentAlbum = albums[currentSongIndex];
-      const title = currentAlbum.getAttribute("data-title");
-      const artist = currentAlbum.getAttribute("data-artist");
-      const songId = currentAlbum.getAttribute("data-song");
-      
-      trackStream(songId, title, artist);
       showStreamCounter();
+      startStreamTracking();
     }
 
     function pauseSong() {
@@ -389,6 +426,7 @@
       isPlaying = false;
       playPauseButton.innerHTML = "&#9658;";
       hideStreamCounter();
+      stopStreamTracking();
     }
 
     function togglePlayPause() {
@@ -435,9 +473,14 @@
       artistName.textContent = artist;
       albumIcon.src = icon;
       
+      // Stop any existing tracking
+      stopStreamTracking();
+      
       // Reset stream counter for new song
       currentStreamCount = 0;
       streamCount.textContent = currentStreamCount;
+      listeningTime = 0;
+      streamCounted = false;
     }
 
     trackTimeline.addEventListener("input", (e) => {
@@ -458,9 +501,24 @@
     });
 
     audioPlayer.addEventListener("ended", () => {
+      // Check if this is a short song (<=30s) and count stream if not already counted
+      if (!streamCounted) {
+        const songDuration = audioPlayer.duration || 0;
+        if (songDuration <= 30) {
+          const currentAlbum = albums[currentSongIndex];
+          const title = currentAlbum.getAttribute("data-title");
+          const artist = currentAlbum.getAttribute("data-artist");
+          const songId = currentAlbum.getAttribute("data-song");
+          
+          trackStream(songId, title, artist);
+          streamCounted = true;
+        }
+      }
+      
       isPlaying = false;
       hideStreamCounter();
       playPauseButton.innerHTML = "&#9658;";
+      stopStreamTracking();
     });
 
     document.addEventListener("DOMContentLoaded", () => {
