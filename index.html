@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yung Rain</title>
+  <style>
+    /* General Reset */
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Phone Frame with Margins */
+    .phone-frame {
+      position: relative;
+      width: 400px;
+      height: 800px;
+      background: #333;
+      border-radius: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* App Container */
+    .app {
+      width: 90%;
+      height: 90%;
+      background: #000;
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Player Section */
+    .player {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8f8f8;
+      padding: 15px;
+    }
+    .player img {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+    }
+    .info {
+      flex: 1;
+      margin-left: 10px;
+      text-align: left;
+    }
+    .info h2 {
+      margin: 0;
+      font-size: 1em;
+      color: #000;
+    }
+    .info p {
+      margin: 0;
+      font-size: 0.9em;
+      color: #777;
+    }
+
+    /* Play and Next Buttons Styling */
+    .controls button {
+      background: #000; /* Black background */
+      color: #fff; /* White text */
+      font-size: 1.5em; /* Large font size */
+      border: 2px solid #fff; /* White border */
+      border-radius: 50%; /* Circular button */
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .controls button:hover {
+      background: #444; /* Dark grey hover effect */
+    }
+
+    /* Carousel Section */
+    .carousel {
+      display: flex;
+      overflow-x: scroll;
+      scroll-snap-type: x mandatory;
+      padding: 20px;
+      gap: 10px;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none; /* Hide scrollbar */
+    }
+    .album {
+      flex: 0 0 auto;
+      width: 80%;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      scroll-snap-align: start;
+      padding: 15px;
+      cursor: pointer;
+    }
+    .album img {
+      width: 100%;
+      border-radius: 10px;
+    }
+    .album h3 {
+      font-size: 0.9em;
+      font-weight: normal;
+      color: #777;
+      margin: 10px 0 5px;
+    }
+    .album h1 {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #000;
+      margin: 5px 0;
+    }
+    .album p {
+      font-size: 0.9em;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    /* Footer Section */
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      padding: 15px;
+    }
+    .footer-links a img {
+      width: 40px;
+      height: 40px;
+    }
+
+    /* Hide YouTube iframe visually */
+    #youtube-iframe {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="app">
+      <!-- Player Section -->
+      <div class="player">
+        <img id="album-icon" src="album-icon.png" alt="Album Icon">
+        <div class="info">
+          <h2 id="song-title">Gnarly</h2>
+          <p id="artist-name">Yung Rain</p>
+        </div>
+        <div class="controls">
+          <button id="play-pause">&#9658;</button> <!-- Play Button -->
+          <button id="next">&#9654;</button> <!-- Next Button -->
+        </div>
+      </div>
+
+      <!-- Carousel Section -->
+      <div class="carousel">
+        <div class="album" 
+          data-song="https://www.youtube.com/embed/ugqevT18H7M" 
+          data-title="Gnarly" 
+          data-artist="Yung Rain" 
+          data-icon="album1.jpg" 
+          data-type="youtube">
+          <img src="album1.jpg" alt="Album Cover 1">
+          <h3>Single #1</h3>
+          <h1>Gnarly out now!</h1>
+          <p>They could describe everything with one single word. You know? Like, boba tea (Gnarly), robotics (Gnarly), fried chicken (Gnarly).</p>
+        </div>
+        <div class="album" data-song="song2.mp3" data-title="LOADING..." data-artist="You're just a Gameboy!" data-icon="album2.jpg" data-type="audio">
+          <img src="album2.jpg" alt="Album Cover 2">
+          <h3>Upcoming EP</h3>
+          <h1>LOADING...</h1>
+          <p>Stay tuned at @yungrain52 on Instagram!</p>
+        </div>
+      </div>
+
+      <!-- Footer Section -->
+      <div class="footer-links">
+        <a href="https://www.instagram.com/yungrain52" target="_blank">
+          <img src="instagram.png" alt="Instagram">
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- YouTube Iframe -->
+  <iframe id="youtube-iframe" width="560" height="315" 
+    src="" 
+    title="YouTube video player" 
+    frameborder="0" 
+    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+    referrerpolicy="strict-origin-when-cross-origin" 
+    allowfullscreen>
+  </iframe>
+
+  <audio id="audio-player"></audio>
+
+  <script>
+    const audioPlayer = document.getElementById("audio-player");
+    const youtubeIframe = document.getElementById("youtube-iframe");
+    const playPauseButton = document.getElementById("play-pause");
+    const nextButton = document.getElementById("next");
+    const albumIcon = document.getElementById("album-icon");
+    const songTitle = document.getElementById("song-title");
+    const artistName = document.getElementById("artist-name");
+    const albums = document.querySelectorAll(".album");
+
+    let currentSongIndex = 0;
+
+    function playSong(type, src) {
+      if (type === "youtube") {
+        audioPlayer.pause();
+        audioPlayer.src = ""; // Stop any audio
+        youtubeIframe.src = src;
+        youtubeIframe.style.display = "block";
+      } else {
+        youtubeIframe.src = ""; // Stop YouTube video
+        youtubeIframe.style.display = "none";
+        audioPlayer.src = src;
+        audioPlayer.play();
+      }
+      playPauseButton.innerHTML = "&#10074;&#10074;"; // Pause symbol
+    }
+
+    function pauseSong() {
+      audioPlayer.pause();
+      youtubeIframe.src = ""; // Stop YouTube video
+      youtubeIframe.style.display = "none";
+      playPauseButton.innerHTML = "&#9658;"; // Play symbol
+    }
+
+    playPauseButton.addEventListener("click", () => {
+      const currentAlbum = albums[currentSongIndex];
+      const type = currentAlbum.getAttribute("data-type");
+      const song = currentAlbum.getAttribute("data-song");
+
+      if (playPauseButton.innerHTML === "&#9658;") {
+        playSong(type, song);
+      } else {
+        pauseSong();
+      }
+    });
+
+    nextButton.addEventListener("click", () => {
+      currentSongIndex = (currentSongIndex + 1) % albums.length;
+      const nextAlbum = albums[currentSongIndex];
+      updatePlayer(nextAlbum);
+      playSong(nextAlbum.getAttribute("data-type"), nextAlbum.getAttribute("data-song"));
+    });
+
+    albums.forEach(album => {
+      album.addEventListener("click", () => {
+        updatePlayer(album);
+        playSong(album.getAttribute("data-type"), album.getAttribute("data-song"));
+      });
+    });
+
+    function updatePlayer(album) {
+      const title = album.getAttribute("data-title");
+      const artist = album.getAttribute("data-artist");
+      const icon = album.getAttribute("data-icon");
+
+      songTitle.textContent = title;
+      artistName.textContent = artist;
+      albumIcon.src = icon;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const firstAlbum = albums[0];
+      updatePlayer(firstAlbum);
+    });
+  </script>
+</body>
+</html>
