@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HYPE MUSIC</title>
+  <title>Yung Rain</title>
   <style>
     /* General Reset */
     body, html {
@@ -33,7 +33,6 @@
 
     /* App Container */
     .app {
-      position: relative;
       width: 90%;
       height: 90%;
       background: #000;
@@ -42,30 +41,6 @@
       box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: column;
-    }
-
-    /* Banner Section */
-    .banner {
-      width: 100%;
-      background: #222; /* Darker color to differentiate */
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    }
-    .banner img {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px; /* Rounded corners for the logo */
-    }
-    .banner h1 {
-      font-size: 1.2em;
-      color: white;
-      margin: 0;
-      flex-grow: 1;
-      text-align: center;
-      font-weight: bold;
     }
 
     /* Album Cover Section */
@@ -77,7 +52,6 @@
       padding: 20px;
       gap: 10px;
       text-align: center;
-      flex-grow: 1;
     }
     .album-cover img {
       width: 100%;
@@ -162,12 +136,6 @@
     .controls button:hover {
       background: #444;
     }
-    .controls button#play-pause {
-      font-size: 1.5em; /* Ensure consistent size */
-      line-height: 1; /* Prevent stretching */
-      text-align: center;
-      padding: 0; /* Remove extra padding */
-    }
     .controls button#play-pause span {
       display: inline-block;
       width: 10px;
@@ -184,7 +152,6 @@
       padding: 20px;
       gap: 10px;
       transition: opacity 0.3s ease; /* Smooth fade effect */
-      flex-grow: 1;
     }
     .carousel.hidden {
       opacity: 0;
@@ -241,12 +208,6 @@
 <body>
   <div class="phone-frame">
     <div class="app">
-      <!-- Banner Section -->
-      <div class="banner">
-        <img src="logo.png" alt="HYPE MUSIC Logo">
-        <h1 style="font-family:helvetica">HYPE MUSIC</h1>
-      </div>
-
       <!-- Album Cover -->
       <div class="album-cover" id="album-display">
         <img id="album-icon" src="album-icon.png" alt="Album Cover">
@@ -296,5 +257,121 @@
       </div>
     </div>
   </div>
+
+  <audio id="audio-player"></audio>
+
+  <script>
+    const audioPlayer = document.getElementById("audio-player");
+    const playPauseButton = document.getElementById("play-pause");
+    const nextButton = document.getElementById("next");
+    const albumIcon = document.getElementById("album-icon");
+    const songTitle = document.getElementById("song-title");
+    const artistName = document.getElementById("artist-name");
+    const currentTime = document.getElementById("current-time");
+    const totalTime = document.getElementById("total-time");
+    const trackTimeline = document.getElementById("track-timeline");
+    const albums = document.querySelectorAll(".album");
+    const albumDisplay = document.getElementById("album-display");
+    const carousel = document.getElementById("carousel");
+    const backButton = document.getElementById("back-to-carousel");
+
+    let currentSongIndex = 0;
+    let isPlaying = false;
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return `${minutes}:${secs}`;
+    }
+
+    function updateTimeline() {
+      const duration = audioPlayer.duration || 0;
+      const current = audioPlayer.currentTime || 0;
+      trackTimeline.max = duration;
+      trackTimeline.value = current;
+      currentTime.textContent = formatTime(current);
+      totalTime.textContent = formatTime(duration);
+    }
+
+    function playSong(src) {
+      audioPlayer.src = src;
+      audioPlayer.play();
+      isPlaying = true;
+      playPauseButton.innerHTML = `
+        <span></span>
+        <span></span>
+      `;
+    }
+
+    function pauseSong() {
+      audioPlayer.pause();
+      isPlaying = false;
+      playPauseButton.innerHTML = "&#9658;";
+    }
+
+    function togglePlayPause() {
+      if (isPlaying) {
+        pauseSong();
+      } else {
+        const currentAlbum = albums[currentSongIndex];
+        const song = currentAlbum.getAttribute("data-song");
+        playSong(song);
+      }
+    }
+
+    playPauseButton.addEventListener("click", togglePlayPause);
+
+    nextButton.addEventListener("click", () => {
+      currentSongIndex = (currentSongIndex + 1) % albums.length;
+      const nextAlbum = albums[currentSongIndex];
+      updatePlayer(nextAlbum);
+      playSong(nextAlbum.getAttribute("data-song"));
+    });
+
+    albums.forEach((album, index) => {
+      album.addEventListener("click", () => {
+        currentSongIndex = index;
+        updatePlayer(album);
+        albumDisplay.style.display = "flex"; // Show album cover section
+        carousel.classList.add("hidden"); // Hide carousel
+        playSong(album.getAttribute("data-song"));
+      });
+    });
+
+    backButton.addEventListener("click", () => {
+      albumDisplay.style.display = "none"; // Hide album cover section
+      carousel.classList.remove("hidden"); // Show carousel
+    });
+
+    function updatePlayer(album) {
+      const title = album.getAttribute("data-title");
+      const artist = album.getAttribute("data-artist");
+      const icon = album.getAttribute("data-icon");
+
+      songTitle.textContent = title;
+      artistName.textContent = artist;
+      albumIcon.src = icon;
+    }
+
+    trackTimeline.addEventListener("input", (e) => {
+      audioPlayer.currentTime = e.target.value;
+    });
+
+    // Update timeline as song plays
+    audioPlayer.addEventListener("timeupdate", updateTimeline);
+
+    audioPlayer.addEventListener("play", () => {
+      isPlaying = true;
+    });
+
+    audioPlayer.addEventListener("pause", () => {
+      isPlaying = false;
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const firstAlbum = albums[0];
+      updatePlayer(firstAlbum);
+    });
+  </script>
 </body>
 </html>
