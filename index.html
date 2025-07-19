@@ -145,11 +145,6 @@
       width: 40px;
       height: 40px;
     }
-
-    /* Hide YouTube iframe visually */
-    #youtube-iframe {
-      display: none;
-    }
   </style>
 </head>
 <body>
@@ -171,17 +166,20 @@
       <!-- Carousel Section -->
       <div class="carousel">
         <div class="album" 
-          data-song="https://www.youtube.com/embed/ugqevT18H7M" 
+          data-song="gnarly.m4a" 
           data-title="Gnarly" 
           data-artist="Yung Rain" 
-          data-icon="album1.jpeg" 
-          data-type="youtube">
+          data-icon="album1.jpeg">
           <img src="album1.jpeg" alt="Album Cover 1">
           <h3>Single #1</h3>
           <h1>Gnarly out now!</h1>
           <p>They could describe everything with one single word. You know? Like, boba tea (Gnarly), robotics (Gnarly), fried chicken (Gnarly).</p>
         </div>
-        <div class="album" data-song="song2.mp3" data-title="LOADING..." data-artist="You're just a Gameboy!" data-icon="album2.jpeg" data-type="audio">
+        <div class="album" 
+          data-song="loading.m4a" 
+          data-title="LOADING..." 
+          data-artist="You're just a Gameboy!" 
+          data-icon="album2.jpeg">
           <img src="album2.jpeg" alt="Album Cover 2">
           <h3>Upcoming EP</h3>
           <h1>LOADING...</h1>
@@ -198,21 +196,10 @@
     </div>
   </div>
 
-  <!-- YouTube Iframe -->
-  <iframe id="youtube-iframe" width="560" height="315" 
-    src="" 
-    title="YouTube video player" 
-    frameborder="0" 
-    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-    referrerpolicy="strict-origin-when-cross-origin" 
-    allowfullscreen>
-  </iframe>
-
   <audio id="audio-player"></audio>
 
   <script>
     const audioPlayer = document.getElementById("audio-player");
-    const youtubeIframe = document.getElementById("youtube-iframe");
     const playPauseButton = document.getElementById("play-pause");
     const nextButton = document.getElementById("next");
     const albumIcon = document.getElementById("album-icon");
@@ -221,52 +208,45 @@
     const albums = document.querySelectorAll(".album");
 
     let currentSongIndex = 0;
+    let isPlaying = false;
 
-    function playSong(type, src) {
-      if (type === "youtube") {
-        audioPlayer.pause();
-        audioPlayer.src = ""; // Stop any audio
-        youtubeIframe.src = src;
-        youtubeIframe.style.display = "block";
-      } else {
-        youtubeIframe.src = ""; // Stop YouTube video
-        youtubeIframe.style.display = "none";
-        audioPlayer.src = src;
-        audioPlayer.play();
-      }
+    function playSong(src) {
+      audioPlayer.src = src;
+      audioPlayer.play();
+      isPlaying = true;
       playPauseButton.innerHTML = "&#10074;&#10074;"; // Pause symbol
     }
 
     function pauseSong() {
       audioPlayer.pause();
-      youtubeIframe.src = ""; // Stop YouTube video
-      youtubeIframe.style.display = "none";
+      isPlaying = false;
       playPauseButton.innerHTML = "&#9658;"; // Play symbol
     }
 
-    playPauseButton.addEventListener("click", () => {
-      const currentAlbum = albums[currentSongIndex];
-      const type = currentAlbum.getAttribute("data-type");
-      const song = currentAlbum.getAttribute("data-song");
-
-      if (playPauseButton.innerHTML === "&#9658;") {
-        playSong(type, song);
-      } else {
+    function togglePlayPause() {
+      if (isPlaying) {
         pauseSong();
+      } else {
+        const currentAlbum = albums[currentSongIndex];
+        const song = currentAlbum.getAttribute("data-song");
+        playSong(song);
       }
-    });
+    }
+
+    playPauseButton.addEventListener("click", togglePlayPause);
 
     nextButton.addEventListener("click", () => {
       currentSongIndex = (currentSongIndex + 1) % albums.length;
       const nextAlbum = albums[currentSongIndex];
       updatePlayer(nextAlbum);
-      playSong(nextAlbum.getAttribute("data-type"), nextAlbum.getAttribute("data-song"));
+      playSong(nextAlbum.getAttribute("data-song"));
     });
 
-    albums.forEach(album => {
+    albums.forEach((album, index) => {
       album.addEventListener("click", () => {
+        currentSongIndex = index;
         updatePlayer(album);
-        playSong(album.getAttribute("data-type"), album.getAttribute("data-song"));
+        playSong(album.getAttribute("data-song"));
       });
     });
 
@@ -279,6 +259,24 @@
       artistName.textContent = artist;
       albumIcon.src = icon;
     }
+
+    // Audio player event listeners
+    audioPlayer.addEventListener("ended", () => {
+      // Auto-play next song when current song ends
+      nextButton.click();
+    });
+
+    audioPlayer.addEventListener("pause", () => {
+      if (isPlaying) {
+        isPlaying = false;
+        playPauseButton.innerHTML = "&#9658;"; // Play symbol
+      }
+    });
+
+    audioPlayer.addEventListener("play", () => {
+      isPlaying = true;
+      playPauseButton.innerHTML = "&#10074;&#10074;"; // Pause symbol
+    });
 
     document.addEventListener("DOMContentLoaded", () => {
       const firstAlbum = albums[0];
