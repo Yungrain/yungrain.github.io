@@ -337,26 +337,34 @@
     }
 
     async function trackStream(songId, title, artist) {
+      console.log('🎵 Tracking stream:', { songId, title, artist });
+      
+      // Always increment counter locally first
+      currentStreamCount++;
+      streamCount.textContent = currentStreamCount;
+      
       try {
+        const streamData = {
+          song_id: songId,
+          title: title,
+          artist: artist,
+          stream_count: 1
+        };
+        
+        console.log('📤 Sending to database:', streamData);
+        
         const { data, error } = await supabase
           .from('song_streams')
-          .insert([
-            {
-              song_id: songId,
-              title: title,
-              artist: artist,
-              stream_count: 1
-            }
-          ]);
+          .insert(streamData);
         
         if (error) {
-          console.error('Error tracking stream:', error);
+          console.error('❌ Database error:', error);
+          console.error('Full error object:', JSON.stringify(error, null, 2));
         } else {
-          currentStreamCount++;
-          streamCount.textContent = currentStreamCount;
+          console.log('✅ Stream saved to database successfully!');
         }
       } catch (err) {
-        console.error('Stream tracking failed:', err);
+        console.error('💥 Exception during save:', err);
       }
     }
 
@@ -385,10 +393,21 @@
           
           const songDuration = audioPlayer.duration || 0;
           const hasReached30Seconds = listeningTime >= 30;
-          const isShortSongCompleted = songDuration > 0 && songDuration <= 30 && audioPlayer.ended;
           
-          // Count stream if 30 seconds reached OR if short song completed
-          if (hasReached30Seconds || isShortSongCompleted) {
+          // For songs 35 seconds or less, require full song completion
+          // For songs longer than 35 seconds, require 30 seconds of listening
+          let shouldCountStream = false;
+          if (songDuration <= 35) {
+            // Short song: must be completed entirely
+            shouldCountStream = audioPlayer.ended;
+          } else {
+            // Long song: just need 30 seconds
+            shouldCountStream = hasReached30Seconds;
+          }
+          
+          console.log(`⏰ Time: ${listeningTime}s, Duration: ${songDuration.toFixed(1)}s, Ended: ${audioPlayer.ended}, Should count: ${shouldCountStream}`);
+          
+          if (shouldCountStream) {
             const currentAlbum = albums[currentSongIndex];
             const title = currentAlbum.getAttribute("data-title");
             const artist = currentAlbum.getAttribute("data-artist");
