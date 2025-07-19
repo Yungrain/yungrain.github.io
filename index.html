@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yung Rain</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     /* General Reset */
     body, html {
@@ -41,6 +42,29 @@
       box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: column;
+      position: relative;
+    }
+
+    /* Stream Counter */
+    .stream-counter {
+      background: #444;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      display: none;
+      min-width: 60px;
+      text-align: center;
+      margin-left: 15px;
+    }
+
+    /* Button container for return button and stream counter */
+    .button-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
     }
 
     /* Album Cover Section */
@@ -208,6 +232,8 @@
 <body>
   <div class="phone-frame">
     <div class="app">
+
+
       <!-- Album Cover -->
       <div class="album-cover" id="album-display">
         <img id="album-icon" src="album-icon.png" alt="Album Cover">
@@ -222,7 +248,13 @@
           <button id="play-pause">&#9658;</button>
           <button id="next">&#9654;</button>
         </div>
-        <button class="back-button" id="back-to-carousel">Return</button>
+        <div class="button-container">
+          <button class="back-button" id="back-to-carousel">Return</button>
+          <div class="stream-counter" id="stream-counter">
+            <div>Streams</div>
+            <div id="stream-count">0</div>
+          </div>
+        </div>
       </div>
 
       <!-- Carousel Section -->
@@ -261,6 +293,11 @@
   <audio id="audio-player"></audio>
 
   <script>
+    // Supabase configuration
+    const supabaseUrl = 'https://vbdiekymqfngqiduqbxw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiZGlla3ltcWZuZ3FpZHVxYnh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NjAxMTIsImV4cCI6MjA2ODUzNjExMn0.XXwZ3Ighus1YV7NX0OnDkOk4ggxxlJ1uQ9-qHpzxs8E';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
     const audioPlayer = document.getElementById("audio-player");
     const playPauseButton = document.getElementById("play-pause");
     const nextButton = document.getElementById("next");
@@ -274,9 +311,12 @@
     const albumDisplay = document.getElementById("album-display");
     const carousel = document.getElementById("carousel");
     const backButton = document.getElementById("back-to-carousel");
+    const streamCounter = document.getElementById("stream-counter");
+    const streamCount = document.getElementById("stream-count");
 
     let currentSongIndex = 0;
     let isPlaying = false;
+    let currentStreamCount = 0;
 
     function formatTime(seconds) {
       const minutes = Math.floor(seconds / 60);
@@ -293,6 +333,38 @@
       totalTime.textContent = formatTime(duration);
     }
 
+    async function trackStream(songId, title, artist) {
+      try {
+        const { data, error } = await supabase
+          .from('song_streams')
+          .insert([
+            {
+              song_id: songId,
+              title: title,
+              artist: artist,
+              stream_count: 1
+            }
+          ]);
+        
+        if (error) {
+          console.error('Error tracking stream:', error);
+        } else {
+          currentStreamCount++;
+          streamCount.textContent = currentStreamCount;
+        }
+      } catch (err) {
+        console.error('Stream tracking failed:', err);
+      }
+    }
+
+    function showStreamCounter() {
+      streamCounter.style.display = 'block';
+    }
+
+    function hideStreamCounter() {
+      streamCounter.style.display = 'none';
+    }
+
     function playSong(src) {
       audioPlayer.src = src;
       audioPlayer.play();
@@ -301,12 +373,22 @@
         <span></span>
         <span></span>
       `;
+      
+      // Track stream and show counter
+      const currentAlbum = albums[currentSongIndex];
+      const title = currentAlbum.getAttribute("data-title");
+      const artist = currentAlbum.getAttribute("data-artist");
+      const songId = currentAlbum.getAttribute("data-song");
+      
+      trackStream(songId, title, artist);
+      showStreamCounter();
     }
 
     function pauseSong() {
       audioPlayer.pause();
       isPlaying = false;
       playPauseButton.innerHTML = "&#9658;";
+      hideStreamCounter();
     }
 
     function togglePlayPause() {
@@ -341,6 +423,7 @@
     backButton.addEventListener("click", () => {
       albumDisplay.style.display = "none"; // Hide album cover section
       carousel.classList.remove("hidden"); // Show carousel
+      hideStreamCounter();
     });
 
     function updatePlayer(album) {
@@ -351,6 +434,10 @@
       songTitle.textContent = title;
       artistName.textContent = artist;
       albumIcon.src = icon;
+      
+      // Reset stream counter for new song
+      currentStreamCount = 0;
+      streamCount.textContent = currentStreamCount;
     }
 
     trackTimeline.addEventListener("input", (e) => {
@@ -362,10 +449,18 @@
 
     audioPlayer.addEventListener("play", () => {
       isPlaying = true;
+      showStreamCounter();
     });
 
     audioPlayer.addEventListener("pause", () => {
       isPlaying = false;
+      hideStreamCounter();
+    });
+
+    audioPlayer.addEventListener("ended", () => {
+      isPlaying = false;
+      hideStreamCounter();
+      playPauseButton.innerHTML = "&#9658;";
     });
 
     document.addEventListener("DOMContentLoaded", () => {
