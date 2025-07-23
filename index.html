@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+add another song. <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -232,6 +232,8 @@
 <body>
   <div class="phone-frame">
     <div class="app">
+
+
       <!-- Album Cover -->
       <div class="album-cover" id="album-display">
         <img id="album-icon" src="album-icon.png" alt="Album Cover">
@@ -262,31 +264,33 @@
           data-title="Gnarly" 
           data-artist="LIL ICE POP" 
           data-icon="album1.jpeg">
-          <img src="album1.jpeg" alt="gnarly album art">
+          <img src="album1.jpeg" alt="Album Cover 1">
           <h3>Single #1</h3>
           <h1>Gnarly out now!</h1>
-          <p>They could describe everything with one single word. You know?</p>
+          <p>They could describe everything with one single word. You know? Like, boba tea (Gnarly), robotics (Gnarly), fried chicken (Gnarly).</p>
         </div>
         <div class="album" 
-          data-song="1-800-hot-fun.m4a" 
+          data-song="1-800-hot-n-fun.m4a" 
           data-title="1-800-hot-n-fun" 
           data-artist="LIL ICE POP" 
           data-icon="album2.jpeg">
-          <img src="album2.jpeg" alt="1-800-hot-n-fun album art">
-          <h3>Single #2</h3>
+          <img src="album2.jpeg" alt="Album Cover 2">
+          <h3>[LATEST RELEASE]</h3>
           <h1>1-800-hot-n-fun</h1>
-          <p>1-800-hot-n-fun, that's my number, hit my line.</p>
+          <p></p>
+        
         </div>
+
         <div class="album" 
-          data-song="dirtywork.m4a" 
-          data-title="Dirty Work" 
-          data-artist="LIL ICE POP" 
-          data-icon="album3.JPEG">
-          <img src="album3.JPEG" alt="dirty work album art">
-          <h3>Single #3 [LATEST]</h3>
-          <h1>Dirty Work</h1>
-          <p>Real bad business, that's dirty work.</p>
-        </div>
+  data-song="dirtywork.m4a" 
+  data-title="Dirty Work" 
+  data-artist="LIL ICE POP" 
+  data-icon="album3.jpeg">
+  <img src="album3.jpeg" alt="New Album Cover">
+  <h3>[LATEST RELEASE]</h3>
+  <h1>Dirty Work</h1>
+  <p></p>
+</div>
       </div>
 
       <!-- Footer Section -->
@@ -299,9 +303,259 @@
   </div>
 
   <audio id="audio-player"></audio>
+
   <script>
-    // JavaScript code remains as is
-    // (This code is already included in your original question)
+    // Supabase configuration
+    const supabaseUrl = 'https://vbdiekymqfngqiduqbxw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZiZGlla3ltcWZuZ3FpZHVxYnh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5NjAxMTIsImV4cCI6MjA2ODUzNjExMn0.XXwZ3Ighus1YV7NX0OnDkOk4ggxxlJ1uQ9-qHpzxs8E';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const audioPlayer = document.getElementById("audio-player");
+    const playPauseButton = document.getElementById("play-pause");
+    const nextButton = document.getElementById("next");
+    const albumIcon = document.getElementById("album-icon");
+    const songTitle = document.getElementById("song-title");
+    const artistName = document.getElementById("artist-name");
+    const currentTime = document.getElementById("current-time");
+    const totalTime = document.getElementById("total-time");
+    const trackTimeline = document.getElementById("track-timeline");
+    const albums = document.querySelectorAll(".album");
+    const albumDisplay = document.getElementById("album-display");
+    const carousel = document.getElementById("carousel");
+    const backButton = document.getElementById("back-to-carousel");
+    const streamCounter = document.getElementById("stream-counter");
+    const streamCount = document.getElementById("stream-count");
+
+    let currentSongIndex = 0;
+    let isPlaying = false;
+    let currentStreamCount = 0;
+    let listeningTime = 0;
+    let streamCounted = false;
+    let updateInterval;
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return `${minutes}:${secs}`;
+    }
+
+    function updateTimeline() {
+      const duration = audioPlayer.duration || 0;
+      const current = audioPlayer.currentTime || 0;
+      trackTimeline.max = duration;
+      trackTimeline.value = current;
+      currentTime.textContent = formatTime(current);
+      totalTime.textContent = formatTime(duration);
+    }
+
+    async function trackStream(songId, title, artist) {
+      console.log('🎵 Tracking stream:', { songId, title, artist });
+      
+      // Always increment counter locally first
+      currentStreamCount++;
+      streamCount.textContent = currentStreamCount;
+      
+      try {
+        const streamData = {
+          song_id: songId,
+          title: title,
+          artist: artist,
+          stream_count: 1
+        };
+        
+        console.log('📤 Sending to database:', streamData);
+        
+        const { data, error } = await supabase
+          .from('song_streams')
+          .insert(streamData);
+        
+        if (error) {
+          console.error('❌ Database error:', error);
+          console.error('Full error object:', JSON.stringify(error, null, 2));
+        } else {
+          console.log('✅ Stream saved to database successfully!');
+        }
+      } catch (err) {
+        console.error('💥 Exception during save:', err);
+      }
+    }
+
+    function showStreamCounter() {
+      streamCounter.style.display = 'block';
+    }
+
+    function hideStreamCounter() {
+      streamCounter.style.display = 'none';
+    }
+
+    function startStreamTracking() {
+      // Reset tracking for new song
+      listeningTime = 0;
+      streamCounted = false;
+      
+      // Clear any existing interval
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+      
+      // Start tracking every second
+      updateInterval = setInterval(() => {
+        if (isPlaying && !streamCounted) {
+          listeningTime++;
+          
+          const songDuration = audioPlayer.duration || 0;
+          const hasReached30Seconds = listeningTime >= 30;
+          
+          // For songs 35 seconds or less, require full song completion
+          // For songs longer than 35 seconds, require 30 seconds of listening
+          let shouldCountStream = false;
+          if (songDuration <= 35) {
+            // Short song: must be completed entirely
+            shouldCountStream = audioPlayer.ended;
+          } else {
+            // Long song: just need 30 seconds
+            shouldCountStream = hasReached30Seconds;
+          }
+          
+          console.log(`⏰ Time: ${listeningTime}s, Duration: ${songDuration.toFixed(1)}s, Ended: ${audioPlayer.ended}, Should count: ${shouldCountStream}`);
+          
+          if (shouldCountStream) {
+            const currentAlbum = albums[currentSongIndex];
+            const title = currentAlbum.getAttribute("data-title");
+            const artist = currentAlbum.getAttribute("data-artist");
+            const songId = currentAlbum.getAttribute("data-song");
+            
+            trackStream(songId, title, artist);
+            streamCounted = true; // Prevent counting multiple times
+          }
+        }
+      }, 1000); // Update every second
+    }
+
+    function stopStreamTracking() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
+      }
+    }
+
+    function playSong(src) {
+      audioPlayer.src = src;
+      audioPlayer.play();
+      isPlaying = true;
+      playPauseButton.innerHTML = `
+        <span></span>
+        <span></span>
+      `;
+      
+      showStreamCounter();
+      startStreamTracking();
+    }
+
+    function pauseSong() {
+      audioPlayer.pause();
+      isPlaying = false;
+      playPauseButton.innerHTML = "&#9658;";
+      hideStreamCounter();
+      stopStreamTracking();
+    }
+
+    function togglePlayPause() {
+      if (isPlaying) {
+        pauseSong();
+      } else {
+        const currentAlbum = albums[currentSongIndex];
+        const song = currentAlbum.getAttribute("data-song");
+        playSong(song);
+      }
+    }
+
+    playPauseButton.addEventListener("click", togglePlayPause);
+
+    nextButton.addEventListener("click", () => {
+      currentSongIndex = (currentSongIndex + 1) % albums.length;
+      const nextAlbum = albums[currentSongIndex];
+      updatePlayer(nextAlbum);
+      playSong(nextAlbum.getAttribute("data-song"));
+    });
+
+    albums.forEach((album, index) => {
+      album.addEventListener("click", () => {
+        currentSongIndex = index;
+        updatePlayer(album);
+        albumDisplay.style.display = "flex"; // Show album cover section
+        carousel.classList.add("hidden"); // Hide carousel
+        playSong(album.getAttribute("data-song"));
+      });
+    });
+
+    backButton.addEventListener("click", () => {
+      albumDisplay.style.display = "none"; // Hide album cover section
+      carousel.classList.remove("hidden"); // Show carousel
+      hideStreamCounter();
+    });
+
+    function updatePlayer(album) {
+      const title = album.getAttribute("data-title");
+      const artist = album.getAttribute("data-artist");
+      const icon = album.getAttribute("data-icon");
+
+      songTitle.textContent = title;
+      artistName.textContent = artist;
+      albumIcon.src = icon;
+      
+      // Stop any existing tracking
+      stopStreamTracking();
+      
+      // Reset stream counter for new song
+      currentStreamCount = 0;
+      streamCount.textContent = currentStreamCount;
+      listeningTime = 0;
+      streamCounted = false;
+    }
+
+    trackTimeline.addEventListener("input", (e) => {
+      audioPlayer.currentTime = e.target.value;
+    });
+
+    // Update timeline as song plays
+    audioPlayer.addEventListener("timeupdate", updateTimeline);
+
+    audioPlayer.addEventListener("play", () => {
+      isPlaying = true;
+      showStreamCounter();
+    });
+
+    audioPlayer.addEventListener("pause", () => {
+      isPlaying = false;
+      hideStreamCounter();
+    });
+
+    audioPlayer.addEventListener("ended", () => {
+      // Check if this is a short song (<=30s) and count stream if not already counted
+      if (!streamCounted) {
+        const songDuration = audioPlayer.duration || 0;
+        if (songDuration <= 30) {
+          const currentAlbum = albums[currentSongIndex];
+          const title = currentAlbum.getAttribute("data-title");
+          const artist = currentAlbum.getAttribute("data-artist");
+          const songId = currentAlbum.getAttribute("data-song");
+          
+          trackStream(songId, title, artist);
+          streamCounted = true;
+        }
+      }
+      
+      isPlaying = false;
+      hideStreamCounter();
+      playPauseButton.innerHTML = "&#9658;";
+      stopStreamTracking();
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const firstAlbum = albums[0];
+      updatePlayer(firstAlbum);
+    });
   </script>
 </body>
 </html>
